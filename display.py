@@ -15,12 +15,7 @@ def img_average(x1, y1, x2, y2, img):
     return average(ret)
 
 def convert_index(x):
-    if x <  3: return x
-    if x == 3: return 6
-    if x == 4: return 3
-    if x == 5: return 4
-    if x == 6: return 5
-    if x == 7: return 7
+    return {3: 6, 4: 3, 5: 4, 6: 5}.get(x, x)
 
 def draw(img_path, post_info):
     img = Image.open(img_path)
