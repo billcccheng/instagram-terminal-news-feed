@@ -58,4 +58,5 @@ def display_to_terminal(posts_info, display_color):
             draw(img_path, posts_info[filename])
 
 if __name__ == '__main__':
+    global posts_info
     display_to_terminal(posts_info)
