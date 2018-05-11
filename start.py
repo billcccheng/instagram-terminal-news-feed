@@ -1,20 +1,22 @@
 import argparse
 import getpass
 import json
+import keyring
 import os
 import requests
 from display import display_to_terminal
 
+SERVICE_NAME = 'instagram-terminal-news-feed'
+
 def get_credential():
-    if not os.path.exists('credential.json'):
+    _username  = keyring.get_password(SERVICE_NAME, 'username')
+    if not _username:
         return
-    try:
-        with open('credential.json') as json_data:
-            credential = json.load(json_data)
-            return credential
-    except FileNotFoundError:
-        print("credential.json file not found in current directory. Exiting.")
-        exit()
+
+    return {
+        'username': _username,
+        'password': keyring.get_password(SERVICE_NAME, 'password')
+    }
 
 def fetch_news_feed(session):
     res = session.get("https://i.instagram.com/api/v1/feed/timeline/", headers={
@@ -60,11 +62,16 @@ def remove_images():
     for filename in file_list:
         os.remove('./images/' + filename)
 
+def reset_credentials():
+    keyring.delete_password(SERVICE_NAME, 'username')
+    keyring.delete_password(SERVICE_NAME, 'password')
+
 def save_credentials(credential, permission):
     if not permission:
         return
-    with open('credential.json', 'w') as _file:
-        json.dump(credential, _file)
+
+    keyring.set_password(SERVICE_NAME, 'username', credential['username'])
+    keyring.set_password(SERVICE_NAME, 'password', credential['password'])
 
 def get_login_session(credential):
     session = requests.Session()
@@ -108,15 +115,25 @@ def login(credential):
     return session
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--color', action='store_true', help='Display image with color')
-    display_color = parser.parse_args().color
-    credential = get_credential()
+    credential = {}
+
+    parser     = argparse.ArgumentParser()
+    parser.add_argument('--color', action='store_true', help='display image with color')
+    parser.add_argument('--reset-credentials', default=False, action='store_true',
+            help='reset stored credentials')
+    
+    args   = parser.parse_args()
+
+    if args.reset_credentials:
+        reset_credentials()
+    else:
+        credential = get_credential()
+
     session = login(credential)
     remove_images()
     posts_info = fetch_news_feed(session)
     save_image(posts_info, session)
-    display_to_terminal(posts_info, display_color)
+    display_to_terminal(posts_info, args.color)
 
 if __name__ == '__main__':
     main()
