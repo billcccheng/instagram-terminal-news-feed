@@ -1,9 +1,11 @@
+import sys
 import argparse
 import getpass
 import json
 import os
 import requests
 from display import display_to_terminal
+import pycookiecheat as pcc
 
 def get_credential():
     if not os.path.exists('credential.json'):
@@ -84,6 +86,28 @@ def get_login_session(credential):
             return None, two_factor_response
     return session, login_response
 
+def add_instagram_cookies(session, browser):
+    added = False
+    cookies = list()
+
+    if (browser.lower() == 'chrome'):
+        cookies = pcc.chrome_cookies('https://instagram.com')
+        for key,value in cookies.items():
+            session.cookies.set(key,value)
+
+    if (len(cookies) > 0):
+        added = True
+
+    return (session, added)
+
+def reuse_browser_session(session):
+    browser = input('What browser? ')
+    session, success = add_instagram_cookies(session, browser)
+    if not success:
+        print('Unsupported brower: browser not in [chrome]')
+        return (None, False)
+    return (session, True)
+
 def login(credential):
     if credential:
         session, _ = get_login_session(credential)
@@ -94,6 +118,17 @@ def login(credential):
         user = input('Username: ')
         pwd = getpass.getpass(prompt='Password: ')
         session, res = get_login_session({"username": user, "password": pwd})
+        if 'checkpoint_required' in res['message']:
+            print(''.join([
+                'You have a check point URL to complete:\n',
+                'https://instagram.com', res['checkpoint_url']
+            ]))
+            input('Resolve the challenge in [chrome] then, hit enter..')
+            print('We are going to import your instagram browser cookies..')
+            session, success = reuse_browser_session(session)
+            if not success:
+                sys.exit(1)
+            break
         if res['authenticated']:
             break
         if not res['authenticated']:
@@ -112,7 +147,14 @@ def main():
     parser.add_argument('--color', action='store_true', help='Display image with color')
     display_color = parser.parse_args().color
     credential = get_credential()
-    session = login(credential)
+    reuse_sess = input('Would you like to use an existing browser session? (y,n): ')
+    if (reuse_sess.lower() == 'y'):
+        session,success = reuse_browser_session(requests.session())
+        if not success:
+            print('There is something wrong with your browser session')
+            sys.exit(1)
+    else:
+        session = login(credential)
     remove_images()
     posts_info = fetch_news_feed(session)
     save_image(posts_info, session)
