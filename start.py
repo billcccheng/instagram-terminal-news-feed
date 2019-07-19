@@ -18,7 +18,7 @@ def get_credential():
 
 def fetch_news_feed(session):
     res = session.get("https://i.instagram.com/api/v1/feed/timeline/", headers={
-        'user-agent':"Instagram 10.3.2 (iPhone7,2; iPhone OS 9_3_3; en_US; en-US; scale=2.00; 750x1334) AppleWebKit/420+",
+        'user-agent':"Mozilla/5.0 (iPhone; CPU iPhone OS 9_3_2 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Mobile/13F69 Instagram 8.4.0 (iPhone7,2; iPhone OS 9_3_2; nb_NO; nb-NO; scale=2.00; 750x1334",
         'cookie':'sessionid={0};'.format(session.cookies['sessionid'])
     })
     if res.status_code != 200:
